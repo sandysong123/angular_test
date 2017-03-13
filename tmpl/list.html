@@ -1,0 +1,14 @@
+<!--书的名字 价格 线上封面-->
+<div class="col-md-4" ng-repeat="book in books track by $index">
+    <div class="panel panel-success text-center">
+        <div class="panel-heading">{{book.bookName}}</div>
+        <div class="panel-body">
+            <img ng-src="{{book.bookCover}}" style="width:200px;height:200px"
+                 alt=""/>
+        </div>
+        <div class="panel-footer">
+            <!-- /detail/1 -->
+            价格：{{book.bookPrice}} <a href="#!/detail/{{book.id}}">去详情</a>
+        </div>
+    </div>
+</div>

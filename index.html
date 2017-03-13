@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html ng-app="bookModule">
+<head>
+    <meta charset="UTF-8">
+    <title>index</title>
+    <link rel="stylesheet" href="./node_modules/bootstrap/dist/css/bootstrap.css"/>
+</head>
+<body>
+<nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="#!/">BookStore</a>
+        </div>
+        <ul class="nav navbar-nav">
+            <li><a href="#!/">首页</a></li>
+            <li><a href="#!/list">图书列表页</a></li>
+            <li><a href="#!/add">增加图书</a></li>
+        </ul>
+    </div>
+</nav>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div ng-view></div>
+        </div>
+    </div>
+</div>
+<script src="./node_modules/jquery/dist/jquery.js"></script>
+<script src="./node_modules/bootstrap/dist/js/bootstrap.js"></script>
+<!--要先引入angular-->
+<script src="./node_modules/angular/angular.js"></script>
+<script src="./node_modules/angular-resource/angular-resource.js"></script>
+<script src="./node_modules/angular-route/angular-route.js"></script>
+<script>
+    var app=angular.module('bookModule',['ngResource','ngRoute']);
+    //路由：访问不同路径的时候，返回不同的页面
+    app.config(function($routeProvider){
+        //每个页面都对应着自己的一个控制器
+        $routeProvider.when('/',{
+            templateUrl:'tmpl/home.html',
+            controller:'homeCtrl'
+        }).when('/list',{
+            templateUrl:'tmpl/list.html',
+            controller:'listCtrl'
+        }).when('/add',{
+            templateUrl:'tmpl/add.html',
+            controller:'addCtrl'
+        }).when('/detail/:bookid',{//路径参数 /detail?bookid=1
+            templateUrl:'tmpl/detail.html',
+            controller:'detailCtrl'
+        }).otherwise('/');//配置404地址 请求地址不存在 跳回首页
+
+    });
+
+    app.factory('Books',function($resource){
+        return $resource('/book/:id',null,{
+            update:{
+                method:'PUT'
+            }
+        });
+    });
+    //详情
+    app.controller('detailCtrl',function($scope,$routeParams,Books,$location){
+        // /detail/1 /detail/:bookid => $routeParams{bookid:1};
+        $scope.id=$routeParams.bookid;
+        //通过id获取具体的书
+        //默认显示修改和删除
+        $scope.flag=true;
+        $scope.changeState=function(){
+            //将book里面的数据 克隆一份给输入框里的tmpl这个变量
+            $scope.tmpl=JSON.parse(JSON.stringify($scope.book));
+            $scope.flag=false;
+        };
+        $scope.cancel=function(){
+            $scope.flag=true;
+        };
+        $scope.updata=function(){
+            //修改的ID是在路径上 ，数据在请求体中
+            Books.update({id:$scope.id},$scope.tmpl).$promise.then(function(data){
+                $scope.book=data;//将修改后的结果替换掉
+                $scope.flag=true;//变回没有输入框的状态
+            })
+        };
+        $scope.book=Books.get({id:$scope.id}); // /book/100 get
+        $scope.remove=function(){
+            Books.remove({id:$scope.id}).$promise.then(function(){
+                $location.path('/list')
+            });
+        }
+    });
+    //添加图书
+    app.controller('addCtrl',function($scope,Books,$location){//ng-Route提供了一个服务$location
+        $scope.add= function () {
+            Books.save($scope.book).$promise.then(function(){
+                //跳转到列表页
+                $location.path('/list')
+            })
+        }
+    });
+    //列表页逻辑
+    app.controller('listCtrl',function($scope,Books){
+        //获取图书
+        $scope.books=Books.query();//将查处的数据挂在作用域上
+    });
+    //首页逻辑
+    app.controller('homeCtrl',function($scope,$sce){
+        $scope.h1=$sce.trustAsHtml('<h1>欢迎来到书城</h1>');
+        $('.carousel').carousel();
+    });
+</script>
+</body>
+</html>
